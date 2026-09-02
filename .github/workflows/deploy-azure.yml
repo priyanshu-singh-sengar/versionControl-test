@@ -1,0 +1,62 @@
+name: Deploy Azure Infrastructure (OIDC)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        description: "Azure Resource Group Name"
+        required: false
+        default: "rg-az400-training"
+      location:
+        description: "Azure Region"
+        required: false
+        default: "eastus"
+
+permissions:
+  id-token: write   # Required for requesting the OIDC JWT token
+  contents: read    # Required for actions/checkout
+
+jobs:
+  deploy:
+    name: Deploy RG & Storage Account
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Resource Group and Storage Account
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            RG_NAME="${{ github.event.inputs.resource_group || 'rg-az400-training' }}"
+            LOCATION="${{ github.event.inputs.location || 'eastus' }}"
+            # Generate unique storage account name (lowercase alphanumeric max 24 chars)
+            RANDOM_SUFFIX=$(head /dev/urandom | tr -dc a-z0-9 | head -c 6)
+            STORAGE_NAME="stgaz400${RANDOM_SUFFIX}"
+
+            echo "=== Step 1: Creating Resource Group '$RG_NAME' in '$LOCATION' ==="
+            az group create --name "$RG_NAME" --location "$LOCATION"
+
+            echo "=== Step 2: Creating Storage Account '$STORAGE_NAME' ==="
+            az storage account create \
+              --name "$STORAGE_NAME" \
+              --resource-group "$RG_NAME" \
+              --location "$LOCATION" \
+              --sku Standard_LRS \
+              --kind StorageV2 \
+              --allow-blob-public-access false
+
+            echo "=== Deployment Succeeded! ==="
+            echo "Resource Group: $RG_NAME"
+            echo "Storage Account: $STORAGE_NAME"
