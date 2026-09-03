@@ -28,8 +28,11 @@ git checkout -b feature/your-feature-name
 4. Open a Pull Request targeting `main` and link it to the issue.
 5. After review approval, merge using **squash merge** to keep history clean.
 
-## Contributing
+## Security Labs
 
+For instructions on completing the Day 4 GitHub Security labs (Secret Scanning & Push Protection, Dependabot SCA, and CodeQL SAST), refer to [SECURITY_LAB.md](SECURITY_LAB.md).
+
+## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution workflow and guidelines.
 
 ## License
